@@ -1,10 +1,10 @@
-# Context Switcher
+# Lock-In: Focus Modes Overhauled
 
 <p align="center">
   <img src="Lock-In/Assets.xcassets/AppIcon.appiconset/icon_512x512.png" alt="Context Switcher app icon" width="140" height="140">
 </p>
 
-**Focus Modes in steroids**
+**Focus Modes Overhauled**
 
 Context Switcher is a native macOS menu bar app for building reusable focus setups. A mode can launch your work apps, close distractions, open URLs, start a timer, and give you a clean way to move between different contexts during the day.
 
