@@ -75,7 +75,7 @@ If quitting apps does not work, open:
 
 `System Settings > Privacy & Security > Automation`
 
-## Current MVP Features
+## Current Features
 
 - Create, edit, delete, and activate saved modes
 - Launch selected installed apps
