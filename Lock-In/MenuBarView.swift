@@ -5,6 +5,7 @@ struct MenuBarView: View {
     @EnvironmentObject private var store: ModeStore
     @State private var showingEditSheet = false
     @State private var showingHelpSheet = false
+    @State private var showingResetAlert = false
     @State private var editingMode: Mode?
 
     var body: some View {
@@ -99,6 +100,12 @@ struct MenuBarView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
 
+                Button("Reset") {
+                    showingResetAlert = true
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
                 Spacer()
 
                 Button("Quit") {
@@ -118,9 +125,23 @@ struct MenuBarView: View {
         .sheet(isPresented: $showingHelpSheet) {
             HelpView(notificationStatus: store.notificationStatus)
         }
+        .alert("Reset Context Switcher?", isPresented: $showingResetAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset and reopen onboarding", role: .destructive) {
+                resetAndReopenOnboarding()
+            }
+        } message: {
+            Text("This will replace your saved modes with the starter defaults and reopen the onboarding window.")
+        }
         .task {
             await store.refreshNotificationStatus()
         }
+    }
+
+    private func resetAndReopenOnboarding() {
+        showingEditSheet = false
+        store.resetForOnboarding()
+        NotificationCenter.default.post(name: .reopenOnboardingRequested, object: nil)
     }
 }
 

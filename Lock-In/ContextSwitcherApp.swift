@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let popover = NSPopover()
     private let store = ModeStore()
     private var onboardingWindow: NSWindow?
+    private var observers: [NSObjectProtocol] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotificationService.requestPermission()
@@ -40,9 +41,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: MenuBarView().environmentObject(store)
         )
 
+        let observer = NotificationCenter.default.addObserver(
+            forName: .reopenOnboardingRequested,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.showOnboardingWindow()
+        }
+        observers.append(observer)
+
         if !store.hasCompletedOnboarding {
             showOnboardingWindow()
         }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        observers.removeAll()
     }
 
     @objc private func togglePopover(_ sender: Any?) {
@@ -56,6 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showOnboardingWindow() {
+        if let onboardingWindow {
+            onboardingWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
         let onboardingView = OnboardingView { [weak self] in
             self?.closeOnboardingWindow()
         }

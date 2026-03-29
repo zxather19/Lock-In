@@ -1,6 +1,10 @@
 import Combine
 import Foundation
 
+extension Notification.Name {
+    static let reopenOnboardingRequested = Notification.Name("reopenOnboardingRequested")
+}
+
 @MainActor
 final class ModeStore: ObservableObject {
     @Published var modes: [Mode] = []
@@ -79,6 +83,19 @@ final class ModeStore: ObservableObject {
         self.modes = modes.map { $0.sanitizedForSave() }
         hasCompletedOnboarding = true
         userDefaults.set(true, forKey: onboardingKey)
+        save()
+    }
+
+    func resetForOnboarding() {
+        modes = Self.defaults
+        activeModeId = nil
+        activationReport = nil
+        hasCompletedOnboarding = false
+
+        userDefaults.removeObject(forKey: activeModeKey)
+        userDefaults.removeObject(forKey: modesKey)
+        userDefaults.set(false, forKey: onboardingKey)
+
         save()
     }
 
