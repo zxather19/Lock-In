@@ -1,3 +1,4 @@
+#if false
 //
 //  Lock_InApp.swift
 //  Lock-In
@@ -30,3 +31,4 @@ struct Lock_InApp: App {
         .modelContainer(sharedModelContainer)
     }
 }
+#endif
