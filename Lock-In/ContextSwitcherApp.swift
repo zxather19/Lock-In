@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotificationService.requestPermission()
-        NSApp.setActivationPolicy(.accessory)
+        updateActivationPolicy(showDockIcon: !store.hasCompletedOnboarding)
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showOnboardingWindow() {
         if let onboardingWindow {
+            updateActivationPolicy(showDockIcon: true)
             onboardingWindow.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -101,11 +102,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
 
         onboardingWindow = window
+        updateActivationPolicy(showDockIcon: true)
         NSApp.activate(ignoringOtherApps: true)
     }
 
     private func closeOnboardingWindow() {
         onboardingWindow?.close()
         onboardingWindow = nil
+        updateActivationPolicy(showDockIcon: false)
+    }
+
+    private func updateActivationPolicy(showDockIcon: Bool) {
+        NSApp.setActivationPolicy(showDockIcon ? .regular : .accessory)
     }
 }

@@ -6,7 +6,11 @@ struct MenuBarView: View {
     @State private var showingEditSheet = false
     @State private var showingHelpSheet = false
     @State private var showingResetAlert = false
+    @State private var showingStartupErrorAlert = false
     @State private var editingMode: Mode?
+    @State private var launchAtLoginEnabled = false
+    @State private var launchAtLoginMessage: String?
+    @State private var startupErrorMessage = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -86,6 +90,35 @@ struct MenuBarView: View {
                 .padding(.top, 10)
             }
 
+            Divider()
+
+            HStack(spacing: 10) {
+                Toggle("Run on startup", isOn: Binding(
+                    get: { launchAtLoginEnabled },
+                    set: { updateLaunchAtLogin(to: $0) }
+                ))
+                .toggleStyle(.switch)
+
+                if launchAtLoginMessage != nil {
+                    Button("Help") {
+                        showingHelpSheet = true
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+
+            if let launchAtLoginMessage {
+                Text(launchAtLoginMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+            }
+
             HStack {
                 Button("Help") {
                     showingHelpSheet = true
@@ -133,8 +166,14 @@ struct MenuBarView: View {
         } message: {
             Text("This will replace your saved modes with the starter defaults and reopen the onboarding window.")
         }
+        .alert("Couldn't update startup setting", isPresented: $showingStartupErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(startupErrorMessage)
+        }
         .task {
             await store.refreshNotificationStatus()
+            refreshLaunchAtLoginState()
         }
     }
 
@@ -142,6 +181,24 @@ struct MenuBarView: View {
         showingEditSheet = false
         store.resetForOnboarding()
         NotificationCenter.default.post(name: .reopenOnboardingRequested, object: nil)
+    }
+
+    private func refreshLaunchAtLoginState() {
+        let state = LaunchAtLoginManager.currentState()
+        launchAtLoginEnabled = state.isEnabled
+        launchAtLoginMessage = state.message
+    }
+
+    private func updateLaunchAtLogin(to enabled: Bool) {
+        do {
+            let state = try LaunchAtLoginManager.setEnabled(enabled)
+            launchAtLoginEnabled = state.isEnabled
+            launchAtLoginMessage = state.message
+        } catch {
+            refreshLaunchAtLoginState()
+            startupErrorMessage = error.localizedDescription
+            showingStartupErrorAlert = true
+        }
     }
 }
 
@@ -291,6 +348,7 @@ private struct HelpView: View {
                     Text("Grant Automation access the first time Context Switcher tries to control another app.")
                     Text("If a mode can’t quit another app, open System Settings > Privacy & Security > Automation and allow Context Switcher.")
                     Text(notificationStatus.description)
+                    Text("If startup requires approval, open System Settings > General > Login Items and enable Context Switcher.")
                 }
 
                 Section("Bundle IDs") {
