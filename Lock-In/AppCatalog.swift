@@ -51,7 +51,7 @@ final class AppCatalogStore: ObservableObject {
                     continue
                 }
 
-                for case let url as URL in enumerator {
+                while let url = enumerator.nextObject() as? URL {
                     guard url.pathExtension == "app" else { continue }
                     guard let bundle = Bundle(url: url) else { continue }
                     guard let bundleIdentifier = bundle.bundleIdentifier, !bundleIdentifier.isEmpty else { continue }

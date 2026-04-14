@@ -58,6 +58,21 @@ final class ModeStore: ObservableObject {
         save()
     }
 
+    func duplicate(_ mode: Mode) {
+        let copy = Mode(
+            name: copyName(for: mode.name),
+            colorHex: mode.colorHex,
+            appsToLaunch: mode.appsToLaunch,
+            appsToQuit: mode.appsToQuit,
+            urlsToOpen: mode.urlsToOpen,
+            timerMinutes: mode.timerMinutes,
+            soundEnabled: mode.soundEnabled
+        ).sanitizedForSave()
+
+        modes.append(copy)
+        save()
+    }
+
     func setActiveMode(_ mode: Mode?) {
         activeModeId = mode?.id
         if let id = mode?.id {
@@ -165,5 +180,18 @@ final class ModeStore: ObservableObject {
         if let activeModeId, !modes.contains(where: { $0.id == activeModeId }) {
             setActiveMode(nil)
         }
+    }
+
+    private func copyName(for name: String) -> String {
+        let baseName = "\(name) Copy"
+        guard modes.contains(where: { $0.name == baseName }) else {
+            return baseName
+        }
+
+        var index = 2
+        while modes.contains(where: { $0.name == "\(baseName) \(index)" }) {
+            index += 1
+        }
+        return "\(baseName) \(index)"
     }
 }

@@ -24,7 +24,7 @@ struct EditModeView: View {
                 header
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 14) {
                         identitySection
                             .modifier(EditAppearMotion(delay: 0.05, isVisible: isVisible))
 
@@ -56,19 +56,19 @@ struct EditModeView: View {
                         behaviorSection
                             .modifier(EditAppearMotion(delay: 0.30, isVisible: isVisible))
                     }
-                    .padding(24)
+                    .padding(18)
                 }
 
                 footer
             }
         }
-        .frame(minWidth: 720, minHeight: 700)
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .frame(minWidth: 640, minHeight: 620)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.3), radius: 34, y: 18)
+        .shadow(color: .black.opacity(0.24), radius: 24, y: 14)
         .environmentObject(appCatalog)
         .preferredColorScheme(.dark)
         .onAppear {
@@ -80,24 +80,24 @@ struct EditModeView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 18) {
+        HStack(alignment: .top, spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color(hex: colorHex).opacity(0.26))
-                    .frame(width: 70, height: 70)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(hex: colorHex).opacity(0.18))
+                    .frame(width: 52, height: 52)
 
                 Circle()
                     .fill(Color(hex: colorHex))
-                    .frame(width: 26, height: 26)
+                    .frame(width: 18, height: 18)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(mode == nil ? "Create a new mode" : "Refine this mode")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
 
                 Text("Shape the apps, links, timer, and sound so this mode feels consistent every time you activate it.")
-                    .font(.title3)
+                    .font(.subheadline)
                     .foregroundStyle(Color.white.opacity(0.72))
 
                 HStack(spacing: 10) {
@@ -110,21 +110,9 @@ struct EditModeView: View {
 
             Spacer()
         }
-        .padding(24)
+        .padding(18)
         .background(
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.20, green: 0.18, blue: 0.33).opacity(0.95),
-                        Color(red: 0.11, green: 0.12, blue: 0.22).opacity(0.9)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                Rectangle()
-                    .fill(.ultraThinMaterial.opacity(0.65))
-            }
+            Color(red: 0.10, green: 0.11, blue: 0.18)
         )
         .overlay(alignment: .bottom) {
             Divider()
@@ -279,33 +267,7 @@ struct EditModeView: View {
 
     private var backgroundLayer: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.06, green: 0.07, blue: 0.12),
-                    Color(red: 0.09, green: 0.10, blue: 0.17),
-                    Color(red: 0.13, green: 0.10, blue: 0.18)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            Circle()
-                .fill(Color(red: 0.53, green: 0.73, blue: 0.84).opacity(0.18))
-                .frame(width: 320, height: 320)
-                .blur(radius: 28)
-                .offset(x: 220, y: -220)
-
-            Circle()
-                .fill(Color(red: 0.77, green: 0.67, blue: 0.86).opacity(0.20))
-                .frame(width: 360, height: 360)
-                .blur(radius: 34)
-                .offset(x: -240, y: 200)
-
-            Circle()
-                .fill(Color(red: 0.99, green: 0.83, blue: 0.86).opacity(0.12))
-                .frame(width: 260, height: 260)
-                .blur(radius: 36)
-                .offset(x: 0, y: -260)
+            Color(red: 0.07, green: 0.08, blue: 0.12)
         }
         .ignoresSafeArea()
     }
@@ -457,16 +419,15 @@ private struct EditGlassSection<Content: View>: View {
 
             content
         }
-        .padding(20)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color.white.opacity(0.08))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.055))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.18), radius: 16, y: 10)
     }
 }
 

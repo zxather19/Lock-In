@@ -15,23 +15,25 @@ struct MenuBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Context Switcher")
-                    .font(.headline)
-                Spacer()
-                Button("Change mode") {
-                    editingMode = store.modes.first
-                    showingEditSheet = true
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Lock-In")
+                        .font(.headline.weight(.semibold))
+                    Text(activeSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+
+                Spacer()
 
                 Button {
                     editingMode = nil
                     showingEditSheet = true
                 } label: {
                     Image(systemName: "plus")
+                        .font(.headline)
                 }
                 .buttonStyle(.plain)
+                .help("Create mode")
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -67,6 +69,9 @@ struct MenuBarView: View {
                             onEdit: {
                                 editingMode = mode
                                 showingEditSheet = true
+                            },
+                            onDuplicate: {
+                                store.duplicate(mode)
                             }
                         )
                     }
@@ -77,23 +82,8 @@ struct MenuBarView: View {
 
             Divider()
 
-            if !store.modes.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(.secondary)
-                    Text("Want to change a mode? Use the Change button on any row.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-            }
-
-            Divider()
-
             HStack(spacing: 10) {
-                Toggle("Run on startup", isOn: Binding(
+                Toggle("Open at login", isOn: Binding(
                     get: { launchAtLoginEnabled },
                     set: { updateLaunchAtLogin(to: $0) }
                 ))
@@ -175,6 +165,14 @@ struct MenuBarView: View {
             await store.refreshNotificationStatus()
             refreshLaunchAtLoginState()
         }
+    }
+
+    private var activeSubtitle: String {
+        guard let activeModeId = store.activeModeId,
+              let mode = store.modes.first(where: { $0.id == activeModeId }) else {
+            return "\(store.modes.count) modes"
+        }
+        return "\(mode.name) is active"
     }
 
     private func resetAndReopenOnboarding() {
@@ -296,45 +294,73 @@ private struct ModeRowView: View {
     let isActive: Bool
     let onActivate: () -> Void
     let onEdit: () -> Void
+    let onDuplicate: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(Color(hex: mode.colorHex))
-                .frame(width: 12, height: 12)
+                .frame(width: 8, height: 36)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(mode.name)
-                    .font(.subheadline.weight(.medium))
-                Text("Launch \(mode.appsToLaunch.count) apps, quit \(mode.appsToQuit.count)")
+                    .font(.subheadline.weight(.semibold))
+                Text(summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            if isActive {
-                Image(systemName: "checkmark")
-                    .foregroundStyle(.secondary)
+            Button(isActive ? "Active" : "Start") {
+                if !isActive {
+                    onActivate()
+                }
             }
-
-            Button("Change") {
-                onEdit()
-            }
-            .buttonStyle(.borderless)
-
-            Button("Activate") {
-                onActivate()
-            }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(isActive ? .secondary : .primary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.primary.opacity(isActive ? 0.04 : 0.08), in: Capsule())
             .disabled(isActive)
+
+            Menu {
+                Button("Change", action: onEdit)
+                Button("Duplicate", action: onDuplicate)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .frame(width: 18, height: 18)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.primary.opacity(0.05))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.primary.opacity(isActive ? 0.08 : 0.045))
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(isActive ? 0.12 : 0.05), lineWidth: 1)
+        )
+    }
+
+    private var summary: String {
+        var parts: [String] = []
+        if !mode.appsToLaunch.isEmpty {
+            parts.append("\(mode.appsToLaunch.count) launch")
+        }
+        if !mode.appsToQuit.isEmpty {
+            parts.append("\(mode.appsToQuit.count) quit")
+        }
+        if !mode.urlsToOpen.isEmpty {
+            parts.append("\(mode.urlsToOpen.count) link")
+        }
+        if mode.timerMinutes > 0 {
+            parts.append("\(mode.timerMinutes)m")
+        }
+        return parts.isEmpty ? "No actions yet" : parts.joined(separator: " · ")
     }
 }
 
