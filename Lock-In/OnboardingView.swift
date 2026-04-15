@@ -8,7 +8,6 @@ struct OnboardingView: View {
 
     @State private var draftModes: [Mode] = ModeStore.defaults
     @State private var isVisible = false
-    @State private var animateGradient = false
 
     var body: some View {
         ZStack {
@@ -27,8 +26,9 @@ struct OnboardingView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Customize your starter modes")
                                 .font(.title3.weight(.semibold))
+                                .foregroundStyle(LockInTheme.ink)
                             Text("Set the apps, URLs, timers, and sounds you want ready from day one. You can always edit these later from the menu bar.")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(LockInTheme.mutedInk)
 
                             ForEach(Array($draftModes.enumerated()), id: \.element.id) { index, $mode in
                                 OnboardingModeCard(mode: $mode)
@@ -44,39 +44,21 @@ struct OnboardingView: View {
                 HStack {
                     Text("You can revise everything later from the menu bar.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(LockInTheme.mutedInk)
                     Spacer()
                     Button("Use defaults") {
                         finish(with: ModeStore.defaults)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .buttonStyle(LockInSecondaryButtonStyle())
 
                     Button("Save and start") {
                         finish(with: draftModes)
                     }
-                    .buttonStyle(.plain)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
-                    .background(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.21, green: 0.46, blue: 0.84),
-                                Color(red: 0.31, green: 0.72, blue: 0.78)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        in: Capsule()
-                    )
-                    .foregroundStyle(.white)
+                    .buttonStyle(LockInPrimaryButtonStyle())
                 }
                 .padding(.horizontal, 28)
                 .padding(.vertical, 18)
-                .background(.regularMaterial)
+                .background(Color.black.opacity(0.20))
             }
         }
         .frame(minWidth: 880, minHeight: 720)
@@ -84,17 +66,14 @@ struct OnboardingView: View {
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+                .strokeBorder(LockInTheme.strongBorder, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.12), radius: 30, y: 18)
         .environmentObject(appCatalog)
+        .preferredColorScheme(.dark)
         .onAppear {
             withAnimation(.spring(response: 0.75, dampingFraction: 0.84)) {
                 isVisible = true
-            }
-
-            withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
-                animateGradient = true
             }
         }
     }
@@ -103,13 +82,13 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 12) {
             Label("New Mac setup", systemImage: "sparkles")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color(red: 0.77, green: 0.76, blue: 0.97))
-            Text("Welcome to Context Switcher")
+                .foregroundStyle(LockInTheme.cyan)
+            Text("Welcome to Lock-In")
                 .font(.system(size: 34, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(LockInTheme.ink)
             Text("Shape a few focused modes now and the menu bar app will feel personal from the very first click.")
                 .font(.title3)
-                .foregroundStyle(Color.white.opacity(0.72))
+                .foregroundStyle(LockInTheme.mutedInk)
 
             HStack(spacing: 12) {
                 OnboardingStatPill(title: "Launch", subtitle: "work apps")
@@ -122,17 +101,8 @@ struct OnboardingView: View {
         .padding(28)
         .background(
             ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.20, green: 0.19, blue: 0.34).opacity(0.92),
-                        Color(red: 0.12, green: 0.14, blue: 0.24).opacity(0.86)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                RoundedRectangle(cornerRadius: 0, style: .continuous)
-                    .fill(.ultraThinMaterial.opacity(0.75))
+                LockInTheme.heroGradient
+                Color.white.opacity(0.025)
             }
         )
         .overlay(alignment: .bottom) {
@@ -142,36 +112,7 @@ struct OnboardingView: View {
     }
 
     private var backgroundLayer: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.06, green: 0.07, blue: 0.12),
-                    Color(red: 0.09, green: 0.10, blue: 0.17),
-                    Color(red: 0.13, green: 0.10, blue: 0.18)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            Circle()
-                .fill(Color(red: 0.53, green: 0.73, blue: 0.84).opacity(0.22))
-                .frame(width: 360, height: 360)
-                .blur(radius: 28)
-                .offset(x: animateGradient ? 240 : 140, y: animateGradient ? -220 : -150)
-
-            Circle()
-                .fill(Color(red: 0.77, green: 0.67, blue: 0.86).opacity(0.22))
-                .frame(width: 420, height: 420)
-                .blur(radius: 32)
-                .offset(x: animateGradient ? -250 : -140, y: animateGradient ? 250 : 180)
-
-            Circle()
-                .fill(Color(red: 0.99, green: 0.83, blue: 0.86).opacity(0.18))
-                .frame(width: 320, height: 320)
-                .blur(radius: 46)
-                .offset(x: 0, y: -260)
-        }
-        .ignoresSafeArea()
+        LockInLiquidBackground(density: .spacious)
     }
 
     private var introCard: some View {
@@ -185,7 +126,7 @@ struct OnboardingView: View {
     private var permissionCard: some View {
         InfoCard(
             title: "Permissions you may see",
-            message: "macOS may ask for Notifications and Automation access. Allowing Automation lets Context Switcher close apps for you. If you skip it, launching will still work but quitting other apps may fail.",
+            message: "macOS may ask for Notifications and Automation access. Allowing Automation lets Lock-In close apps for you. If you skip it, launching will still work but quitting other apps may fail.",
             icon: "hand.raised.square"
         )
     }
@@ -204,10 +145,10 @@ private struct OnboardingStatPill: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(LockInTheme.ink)
             Text(subtitle)
                 .font(.caption)
-                .foregroundStyle(Color.white.opacity(0.68))
+                .foregroundStyle(LockInTheme.mutedInk)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -234,19 +175,19 @@ private struct OnboardingModeCard: View {
                     .frame(width: 14, height: 14)
                 TextField("Mode name", text: $mode.name)
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(LockInTheme.ink)
                 Spacer()
                 Stepper("Timer \(mode.timerMinutes)m", value: $mode.timerMinutes, in: 0...180)
                     .labelsHidden()
                 Text("\(mode.timerMinutes)m")
-                    .foregroundStyle(Color.white.opacity(0.68))
+                    .foregroundStyle(LockInTheme.mutedInk)
                     .font(.subheadline.monospacedDigit())
             }
 
             VStack(alignment: .leading, spacing: 10) {
                 Text("Apps to launch")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(LockInTheme.ink.opacity(0.92))
                 InstalledAppSelectionField(
                     bundleIdentifiers: $mode.appsToLaunch,
                     emptyState: "Choose the apps that should open for this mode.",
@@ -257,7 +198,7 @@ private struct OnboardingModeCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Apps to quit")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(LockInTheme.ink.opacity(0.92))
                 InstalledAppSelectionField(
                     bundleIdentifiers: $mode.appsToQuit,
                     emptyState: "Choose the apps that should close when this mode starts.",
@@ -268,35 +209,21 @@ private struct OnboardingModeCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("URLs to open")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(LockInTheme.ink.opacity(0.92))
                 EditableStringList(items: $mode.urlsToOpen, placeholder: "https://example.com", addLabel: "Add URL")
             }
 
             Toggle("Play a sound when activating this mode", isOn: $mode.soundEnabled)
                 .toggleStyle(.switch)
-                .foregroundStyle(Color.white.opacity(0.88))
+                .tint(LockInTheme.cyan)
+                .foregroundStyle(LockInTheme.ink.opacity(0.88))
 
             Text("Choose from the apps already installed on this Mac. You can change these later from the menu bar.")
                 .font(.footnote)
-                .foregroundStyle(Color.white.opacity(0.62))
+                .foregroundStyle(LockInTheme.mutedInk)
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(
-                    Color.white.opacity(isHovered ? 0.22 : 0.12),
-                    lineWidth: 1
-                )
-        )
-        .shadow(
-            color: Color(red: 0.02, green: 0.02, blue: 0.06).opacity(isHovered ? 0.42 : 0.26),
-            radius: isHovered ? 24 : 14,
-            y: isHovered ? 12 : 8
-        )
+        .lockInGlass(cornerRadius: 22, opacity: 0.075, highlighted: isHovered)
         .scaleEffect(isHovered ? 1.01 : 1.0)
         .animation(.easeOut(duration: 0.18), value: isHovered)
         .onHover { hovering in
@@ -322,8 +249,15 @@ private struct EditableStringList: View {
                             set: { items[index] = $0 }
                         )
                     )
-                    .textFieldStyle(.roundedBorder)
-                    .colorScheme(.dark)
+                    .textFieldStyle(.plain)
+                    .foregroundStyle(LockInTheme.ink)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(LockInTheme.border, lineWidth: 1)
+                    )
 
                     Button {
                         removeRow(at: index)
@@ -331,15 +265,14 @@ private struct EditableStringList: View {
                         Image(systemName: "minus.circle.fill")
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LockInTheme.faintInk)
                 }
             }
 
             Button(addLabel) {
                 items.append("")
             }
-            .buttonStyle(.link)
-            .foregroundStyle(Color(red: 0.75, green: 0.82, blue: 0.98))
+            .buttonStyle(LockInSecondaryButtonStyle())
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
@@ -367,28 +300,21 @@ private struct InfoCard: View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(Color(red: 0.74, green: 0.83, blue: 0.98))
+                .foregroundStyle(LockInTheme.blue)
                 .frame(width: 34, height: 34)
                 .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(title)
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(LockInTheme.ink)
                 Text(message)
-                    .foregroundStyle(Color.white.opacity(0.7))
+                    .foregroundStyle(LockInTheme.mutedInk)
             }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.white.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-        )
+        .lockInGlass(cornerRadius: 20, opacity: 0.07)
     }
 }
 

@@ -45,9 +45,9 @@ struct EditModeView: View {
                             buttonTitle: "Choose apps to quit",
                             delay: 0.18
                         ) {
-                            Text("Context Switcher may ask for Automation permission the first time it closes another app.")
+                            Text("Lock-In may ask for Automation permission the first time it closes another app.")
                                 .font(.caption)
-                                .foregroundStyle(Color.white.opacity(0.64))
+                                .foregroundStyle(LockInTheme.mutedInk)
                         }
 
                         urlsSection
@@ -62,13 +62,13 @@ struct EditModeView: View {
                 footer
             }
         }
-        .frame(minWidth: 640, minHeight: 620)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .frame(minWidth: 700, minHeight: 660)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(LockInTheme.strongBorder, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.24), radius: 24, y: 14)
+        .shadow(color: .black.opacity(0.24), radius: 30, y: 18)
         .environmentObject(appCatalog)
         .preferredColorScheme(.dark)
         .onAppear {
@@ -83,7 +83,7 @@ struct EditModeView: View {
         HStack(alignment: .top, spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(hex: colorHex).opacity(0.18))
+                    .fill(Color(hex: colorHex).opacity(0.22))
                     .frame(width: 52, height: 52)
 
                 Circle()
@@ -92,13 +92,17 @@ struct EditModeView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(mode == nil ? "Create a new mode" : "Refine this mode")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                Label(mode == nil ? "New mode" : "Mode studio", systemImage: "wand.and.stars")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LockInTheme.cyan)
+
+                Text(mode == nil ? "Create a focused context" : "Refine this context")
+                    .font(.system(size: 27, weight: .bold, design: .rounded))
+                    .foregroundStyle(LockInTheme.ink)
 
                 Text("Shape the apps, links, timer, and sound so this mode feels consistent every time you activate it.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.white.opacity(0.72))
+                    .foregroundStyle(LockInTheme.mutedInk)
 
                 HStack(spacing: 10) {
                     summaryPill(title: "\(selectedLaunchApps.count)", subtitle: "launch")
@@ -112,11 +116,14 @@ struct EditModeView: View {
         }
         .padding(18)
         .background(
-            Color(red: 0.10, green: 0.11, blue: 0.18)
+            ZStack {
+                LockInTheme.heroGradient
+                Color.white.opacity(0.025)
+            }
         )
         .overlay(alignment: .bottom) {
             Divider()
-                .overlay(Color.white.opacity(0.06))
+                .overlay(Color.white.opacity(0.08))
         }
     }
 
@@ -126,28 +133,28 @@ struct EditModeView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Mode name")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.white.opacity(0.92))
+                        .foregroundStyle(LockInTheme.ink.opacity(0.92))
 
                     TextField("Deep Work", text: $name)
                         .textFieldStyle(.plain)
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(LockInTheme.ink)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
                         .background(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(Color.white.opacity(0.08))
+                                .fill(Color.white.opacity(0.075))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                                .strokeBorder(LockInTheme.border, lineWidth: 1)
                         )
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Color")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.white.opacity(0.92))
+                        .foregroundStyle(LockInTheme.ink.opacity(0.92))
 
                     HStack(spacing: 12) {
                         ForEach(Self.palette, id: \.self) { hex in
@@ -172,10 +179,10 @@ struct EditModeView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Timer")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.white.opacity(0.92))
+                            .foregroundStyle(LockInTheme.ink.opacity(0.92))
                         Text("Set 0 to keep the session open-ended.")
                             .font(.caption)
-                            .foregroundStyle(Color.white.opacity(0.64))
+                            .foregroundStyle(LockInTheme.mutedInk)
                     }
 
                     Spacer()
@@ -188,7 +195,7 @@ struct EditModeView: View {
                     .labelsHidden()
 
                     Text(timerMinutes == 0 ? "Off" : "\(timerMinutes)m")
-                        .foregroundStyle(.white)
+                        .foregroundStyle(LockInTheme.ink)
                         .font(.headline.monospacedDigit())
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
@@ -198,10 +205,10 @@ struct EditModeView: View {
                 Toggle(isOn: $soundEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Play sound on activation")
-                            .foregroundStyle(Color.white.opacity(0.92))
+                            .foregroundStyle(LockInTheme.ink.opacity(0.92))
                         Text("Useful if you want a clear cue that the transition happened.")
                             .font(.caption)
-                            .foregroundStyle(Color.white.opacity(0.64))
+                            .foregroundStyle(LockInTheme.mutedInk)
                     }
                 }
                 .toggleStyle(.switch)
@@ -217,10 +224,10 @@ struct EditModeView: View {
                     dismiss()
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(Color(red: 0.98, green: 0.70, blue: 0.74))
+                .foregroundStyle(LockInTheme.rose)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.06), in: Capsule())
+                .background(LockInTheme.rose.opacity(0.10), in: Capsule())
             }
 
             Spacer()
@@ -228,48 +235,25 @@ struct EditModeView: View {
             Button("Cancel") {
                 dismiss()
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.white.opacity(0.76))
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-            .background(Color.white.opacity(0.06), in: Capsule())
+            .buttonStyle(LockInSecondaryButtonStyle())
 
             Button("Save Mode") {
                 save()
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.white)
-            .fontWeight(.semibold)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.45, green: 0.39, blue: 0.86),
-                        Color(red: 0.69, green: 0.63, blue: 0.90)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: Capsule()
-            )
+            .buttonStyle(LockInPrimaryButtonStyle(isDisabled: trimmedName.isEmpty))
             .disabled(trimmedName.isEmpty)
-            .opacity(trimmedName.isEmpty ? 0.55 : 1)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 18)
-        .background(.regularMaterial.opacity(0.72))
+        .background(Color.black.opacity(0.18))
         .overlay(alignment: .top) {
             Divider()
-                .overlay(Color.white.opacity(0.06))
+                .overlay(Color.white.opacity(0.08))
         }
     }
 
     private var backgroundLayer: some View {
-        ZStack {
-            Color(red: 0.07, green: 0.08, blue: 0.12)
-        }
-        .ignoresSafeArea()
+        LockInLiquidBackground(density: .spacious)
     }
 
     private func appSection<Content: View>(
@@ -298,10 +282,10 @@ struct EditModeView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(LockInTheme.ink)
             Text(subtitle)
                 .font(.caption)
-                .foregroundStyle(Color.white.opacity(0.64))
+                .foregroundStyle(LockInTheme.mutedInk)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -387,11 +371,11 @@ struct EditModeView: View {
 
     private static let palette = [
         "#6E59CF",
-        "#0F6E56",
-        "#379F91",
-        "#4A90E2",
-        "#E7A33D",
-        "#808080"
+        "#67D8BE",
+        "#7AA7FF",
+        "#E88BA7",
+        "#F2C16B",
+        "#A7A2D8"
     ]
 }
 
@@ -411,23 +395,16 @@ private struct EditGlassSection<Content: View>: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(LockInTheme.ink)
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(Color.white.opacity(0.66))
+                    .foregroundStyle(LockInTheme.mutedInk)
             }
 
             content
         }
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.055))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .lockInGlass(cornerRadius: 20, opacity: 0.064)
     }
 }
 
@@ -446,7 +423,7 @@ private struct UrlListEditor: View {
                         )
                     )
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(LockInTheme.ink)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
                     .background(
@@ -455,7 +432,7 @@ private struct UrlListEditor: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                            .strokeBorder(LockInTheme.border, lineWidth: 1)
                     )
 
                     Button {
@@ -478,9 +455,9 @@ private struct UrlListEditor: View {
             .background(Color.white.opacity(0.08), in: Capsule())
             .overlay(
                 Capsule()
-                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                    .strokeBorder(LockInTheme.border, lineWidth: 1)
             )
-            .foregroundStyle(Color(red: 0.78, green: 0.83, blue: 0.98))
+            .foregroundStyle(LockInTheme.blue)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

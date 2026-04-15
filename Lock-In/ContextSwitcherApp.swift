@@ -28,14 +28,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             button.image = NSImage(
                 systemSymbolName: "rectangle.3.group",
-                accessibilityDescription: "Context Switcher"
+                accessibilityDescription: "Lock-In"
             )
             button.image?.isTemplate = true
             button.action = #selector(togglePopover(_:))
             button.target = self
         }
 
-        popover.contentSize = NSSize(width: 320, height: 420)
+        popover.contentSize = NSSize(width: 360, height: 520)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
             rootView: MenuBarView().environmentObject(store)
@@ -86,17 +86,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         .environmentObject(store)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 740),
+            contentRect: NSRect(x: 0, y: 0, width: 920, height: 760),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         window.center()
-        window.title = "Welcome to Context Switcher"
+        window.title = "Welcome to Lock-In"
         window.isReleasedWhenClosed = false
         window.isOpaque = false
         window.backgroundColor = .clear
         window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
         window.toolbarStyle = .unifiedCompact
         window.contentViewController = NSHostingController(rootView: onboardingView)
         window.makeKeyAndOrderFront(nil)

@@ -13,134 +13,38 @@ struct MenuBarView: View {
     @State private var startupErrorMessage = ""
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Lock-In")
-                        .font(.headline.weight(.semibold))
-                    Text(activeSubtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        ZStack {
+            LockInLiquidBackground(density: .compact)
 
-                Spacer()
+            VStack(spacing: 0) {
+                header
 
-                Button {
-                    editingMode = nil
-                    showingEditSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.headline)
-                }
-                .buttonStyle(.plain)
-                .help("Create mode")
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            if let report = store.activationReport {
-                StatusBanner(report: report) {
-                    store.dismissActivationReport()
-                }
-                Divider()
-            } else if store.notificationStatus != .authorized {
-                PermissionBanner(
-                    description: store.notificationStatus.description,
-                    actionTitle: "Help"
-                ) {
-                    showingHelpSheet = true
-                }
-                Divider()
-            }
-
-            Divider()
-
-            ScrollView {
-                VStack(spacing: 8) {
-                    ForEach(store.modes) { mode in
-                        ModeRowView(
-                            mode: mode,
-                            isActive: store.activeModeId == mode.id,
-                            onActivate: {
-                                let report = ModeActivator.activate(mode: mode)
-                                store.setActiveMode(mode)
-                                store.postActivationReport(report)
-                            },
-                            onEdit: {
-                                editingMode = mode
-                                showingEditSheet = true
-                            },
-                            onDuplicate: {
-                                store.duplicate(mode)
-                            }
-                        )
+                if let report = store.activationReport {
+                    StatusBanner(report: report) {
+                        store.dismissActivationReport()
                     }
-                }
-                .padding(8)
-            }
-            .frame(maxHeight: 320)
-
-            Divider()
-
-            HStack(spacing: 10) {
-                Toggle("Open at login", isOn: Binding(
-                    get: { launchAtLoginEnabled },
-                    set: { updateLaunchAtLogin(to: $0) }
-                ))
-                .toggleStyle(.switch)
-
-                if launchAtLoginMessage != nil {
-                    Button("Help") {
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
+                } else if store.notificationStatus != .authorized {
+                    PermissionBanner(
+                        description: store.notificationStatus.description,
+                        actionTitle: "Help"
+                    ) {
                         showingHelpSheet = true
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
                 }
+
+                modeList
+
+                startupSection
+
+                footerBar
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-
-            if let launchAtLoginMessage {
-                Text(launchAtLoginMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-            }
-
-            HStack {
-                Button("Help") {
-                    showingHelpSheet = true
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-
-                Button("Edit modes") {
-                    editingMode = nil
-                    showingEditSheet = true
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-
-                Button("Reset") {
-                    showingResetAlert = true
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button("Quit") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
         }
-        .frame(width: 320)
+        .frame(width: 360)
+        .preferredColorScheme(.dark)
         .sheet(isPresented: $showingEditSheet) {
             EditModeView(mode: editingMode)
                 .environmentObject(store)
@@ -148,7 +52,7 @@ struct MenuBarView: View {
         .sheet(isPresented: $showingHelpSheet) {
             HelpView(notificationStatus: store.notificationStatus)
         }
-        .alert("Reset Context Switcher?", isPresented: $showingResetAlert) {
+        .alert("Reset Lock-In?", isPresented: $showingResetAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Reset and reopen onboarding", role: .destructive) {
                 resetAndReopenOnboarding()
@@ -167,6 +71,158 @@ struct MenuBarView: View {
         }
     }
 
+    private var header: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .fill(LockInTheme.primaryGradient)
+                    .frame(width: 42, height: 42)
+                Image(systemName: "rectangle.3.group.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .shadow(color: LockInTheme.blue.opacity(0.28), radius: 16, y: 8)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Lock-In")
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .foregroundStyle(LockInTheme.ink)
+                Text(activeSubtitle)
+                    .font(.caption)
+                    .foregroundStyle(LockInTheme.mutedInk)
+            }
+
+            Spacer()
+
+            Button {
+                editingMode = nil
+                showingEditSheet = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 34, height: 34)
+                    .background(Color.white.opacity(0.10), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(LockInTheme.ink)
+            .help("Create mode")
+        }
+        .padding(16)
+    }
+
+    private var modeList: some View {
+        ScrollView {
+            VStack(spacing: 9) {
+                if store.modes.isEmpty {
+                    emptyModeState
+                } else {
+                    ForEach(store.modes) { mode in
+                        ModeRowView(
+                            mode: mode,
+                            isActive: store.activeModeId == mode.id,
+                            onActivate: {
+                                activate(mode)
+                            },
+                            onEdit: {
+                                editingMode = mode
+                                showingEditSheet = true
+                            },
+                            onDuplicate: {
+                                store.duplicate(mode)
+                            }
+                        )
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
+        }
+        .frame(maxHeight: 330)
+    }
+
+    private var emptyModeState: some View {
+        VStack(spacing: 10) {
+            LockInIconBadge(systemName: "sparkles", tint: LockInTheme.lavender)
+            Text("No modes yet")
+                .font(.headline)
+                .foregroundStyle(LockInTheme.ink)
+            Text("Create a mode to launch apps, close distractions, and start faster.")
+                .font(.caption)
+                .foregroundStyle(LockInTheme.mutedInk)
+                .multilineTextAlignment(.center)
+            Button("Create mode") {
+                editingMode = nil
+                showingEditSheet = true
+            }
+            .buttonStyle(LockInPrimaryButtonStyle())
+        }
+        .frame(maxWidth: .infinity)
+        .padding(20)
+        .lockInGlass(cornerRadius: 20, opacity: 0.07)
+    }
+
+    private var startupSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                LockInIconBadge(systemName: "power", tint: LockInTheme.mint)
+                    .frame(width: 30, height: 30)
+
+                Toggle("Open at login", isOn: Binding(
+                    get: { launchAtLoginEnabled },
+                    set: { updateLaunchAtLogin(to: $0) }
+                ))
+                .toggleStyle(.switch)
+                .tint(LockInTheme.cyan)
+                .foregroundStyle(LockInTheme.ink)
+
+                Spacer()
+            }
+
+            if let launchAtLoginMessage {
+                Text(launchAtLoginMessage)
+                    .font(.caption)
+                    .foregroundStyle(LockInTheme.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .lockInGlass(cornerRadius: 18, opacity: 0.055)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 10)
+    }
+
+    private var footerBar: some View {
+        HStack(spacing: 8) {
+            Button("Help") {
+                showingHelpSheet = true
+            }
+            .buttonStyle(.plain)
+
+            Button("Edit modes") {
+                editingMode = nil
+                showingEditSheet = true
+            }
+            .buttonStyle(.plain)
+
+            Button("Reset") {
+                showingResetAlert = true
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Button("Quit") {
+                NSApplication.shared.terminate(nil)
+            }
+            .buttonStyle(.plain)
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(LockInTheme.mutedInk)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.black.opacity(0.12))
+    }
+
     private var activeSubtitle: String {
         guard let activeModeId = store.activeModeId,
               let mode = store.modes.first(where: { $0.id == activeModeId }) else {
@@ -179,6 +235,12 @@ struct MenuBarView: View {
         showingEditSheet = false
         store.resetForOnboarding()
         NotificationCenter.default.post(name: .reopenOnboardingRequested, object: nil)
+    }
+
+    private func activate(_ mode: Mode) {
+        let report = ModeActivator.activate(mode: mode)
+        store.setActiveMode(mode)
+        store.postActivationReport(report)
     }
 
     private func refreshLaunchAtLoginState() {
@@ -208,13 +270,15 @@ private struct StatusBanner: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: iconName)
                 .foregroundStyle(iconColor)
+                .font(.headline)
             VStack(alignment: .leading, spacing: 4) {
                 Text(report.title)
                     .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(LockInTheme.ink)
                 if let firstDetail = report.details.first {
                     Text(firstDetail)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(LockInTheme.mutedInk)
                         .lineLimit(2)
                 }
             }
@@ -225,11 +289,14 @@ private struct StatusBanner: View {
                 Image(systemName: "xmark")
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(LockInTheme.faintInk)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(backgroundColor)
+        .padding(12)
+        .background(backgroundColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+        )
     }
 
     private var iconName: String {
@@ -257,11 +324,11 @@ private struct StatusBanner: View {
     private var backgroundColor: Color {
         switch report.level {
         case .success:
-            return Color.green.opacity(0.08)
+            return Color.green.opacity(0.12)
         case .warning:
-            return Color.orange.opacity(0.08)
+            return Color.orange.opacity(0.12)
         case .failure:
-            return Color.red.opacity(0.08)
+            return Color.red.opacity(0.12)
         }
     }
 }
@@ -273,19 +340,23 @@ private struct PermissionBanner: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "bell.badge")
-                .foregroundStyle(.orange)
+            LockInIconBadge(systemName: "bell.badge", tint: LockInTheme.amber)
             Text(description)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LockInTheme.mutedInk)
                 .lineLimit(2)
             Spacer()
             Button(actionTitle, action: action)
-                .buttonStyle(.link)
+                .buttonStyle(.plain)
+                .foregroundStyle(LockInTheme.blue)
+                .font(.caption.weight(.semibold))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color.orange.opacity(0.08))
+        .padding(12)
+        .background(LockInTheme.amber.opacity(0.10), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(LockInTheme.amber.opacity(0.22), lineWidth: 1)
+        )
     }
 }
 
@@ -295,22 +366,32 @@ private struct ModeRowView: View {
     let onActivate: () -> Void
     let onEdit: () -> Void
     let onDuplicate: () -> Void
+    @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
+            Circle()
                 .fill(Color(hex: mode.colorHex))
-                .frame(width: 8, height: 36)
+                .frame(width: 12, height: 12)
+                .shadow(color: Color(hex: mode.colorHex).opacity(0.45), radius: 8, y: 3)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(mode.name)
                     .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(LockInTheme.ink)
                 Text(summary)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LockInTheme.mutedInk)
             }
 
             Spacer()
+
+            Button("Change") {
+                onEdit()
+            }
+            .buttonStyle(.plain)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(LockInTheme.ink.opacity(0.82))
 
             Button(isActive ? "Active" : "Start") {
                 if !isActive {
@@ -319,14 +400,16 @@ private struct ModeRowView: View {
             }
             .buttonStyle(.plain)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(isActive ? .secondary : .primary)
+            .foregroundStyle(isActive ? LockInTheme.mint : LockInTheme.ink)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color.primary.opacity(isActive ? 0.04 : 0.08), in: Capsule())
+            .background(
+                isActive ? LockInTheme.mint.opacity(0.12) : LockInTheme.blue.opacity(0.18),
+                in: Capsule()
+            )
             .disabled(isActive)
 
             Menu {
-                Button("Change", action: onEdit)
                 Button("Duplicate", action: onDuplicate)
             } label: {
                 Image(systemName: "ellipsis")
@@ -334,16 +417,13 @@ private struct ModeRowView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
+            .foregroundStyle(LockInTheme.mutedInk)
         }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.primary.opacity(isActive ? 0.08 : 0.045))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(isActive ? 0.12 : 0.05), lineWidth: 1)
-        )
+        .padding(12)
+        .lockInGlass(cornerRadius: 18, opacity: 0.055, highlighted: isActive || isHovered)
+        .scaleEffect(isHovered ? 1.006 : 1)
+        .animation(.easeOut(duration: 0.16), value: isHovered)
+        .onHover { isHovered = $0 }
     }
 
     private var summary: String {
@@ -368,30 +448,95 @@ private struct HelpView: View {
     let notificationStatus: NotificationAuthorizationState
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Before beta testing") {
-                    Text("Grant Automation access the first time Context Switcher tries to control another app.")
-                    Text("If a mode can’t quit another app, open System Settings > Privacy & Security > Automation and allow Context Switcher.")
-                    Text(notificationStatus.description)
-                    Text("If startup requires approval, open System Settings > General > Login Items and enable Context Switcher.")
-                }
+        ZStack {
+            LockInLiquidBackground(density: .compact)
 
-                Section("Bundle IDs") {
-                    Text("Use exact app bundle IDs in modes. Example: com.microsoft.VSCode")
-                    Text("Find bundle IDs with: osascript -e 'id of app \"Notion\"'")
-                        .textSelection(.enabled)
-                        .font(.system(.body, design: .monospaced))
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 14) {
+                        LockInIconBadge(systemName: "questionmark.circle", tint: LockInTheme.cyan)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Help and beta checklist")
+                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .foregroundStyle(LockInTheme.ink)
+                            Text("A quick guide for permissions, startup, and testing the full mode flow.")
+                                .font(.subheadline)
+                                .foregroundStyle(LockInTheme.mutedInk)
+                        }
+                    }
 
-                Section("Tester checklist") {
-                    Text("Verify launch, quit, URL open, timer, and notification behavior with real apps installed on the test Mac.")
-                    Text("Try at least one invalid bundle ID and one invalid URL to confirm the app reports the problem clearly.")
-                    Text("Confirm the active mode checkmark updates after activation.")
+                    HelpCard(title: "Before beta testing", icon: "checklist", tint: LockInTheme.mint) {
+                        HelpTip("Grant Automation access the first time Lock-In tries to close another app.")
+                        HelpTip("If quitting apps fails, open System Settings > Privacy & Security > Automation and allow Lock-In.")
+                        HelpTip(notificationStatus.description)
+                        HelpTip("If startup requires approval, open System Settings > General > Login Items and enable Lock-In.")
+                    }
+
+                    HelpCard(title: "Choosing apps", icon: "square.grid.2x2", tint: LockInTheme.blue) {
+                        HelpTip("Use the app picker in onboarding or edit mode. It shows installed apps automatically, so testers do not need bundle IDs.")
+                        HelpTip("If an app was moved or deleted, open the mode editor and choose it again from the current app list.")
+                    }
+
+                    HelpCard(title: "Tester checklist", icon: "sparkles", tint: LockInTheme.lavender) {
+                        HelpTip("Verify launch, quit, URL open, timer, notification, duplicate, reset, and startup behavior.")
+                        HelpTip("Try one invalid URL and one unavailable app to confirm activation feedback is clear.")
+                        HelpTip("Confirm the active mode label updates after activation.")
+                    }
                 }
+                .padding(24)
             }
-            .navigationTitle("Help")
-            .frame(minWidth: 520, minHeight: 420)
+        }
+        .frame(minWidth: 560, minHeight: 500)
+        .preferredColorScheme(.dark)
+    }
+}
+
+private struct HelpCard<Content: View>: View {
+    let title: String
+    let icon: String
+    let tint: Color
+    let content: Content
+
+    init(title: String, icon: String, tint: Color, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.icon = icon
+        self.tint = tint
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                LockInIconBadge(systemName: icon, tint: tint)
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(LockInTheme.ink)
+            }
+
+            content
+        }
+        .padding(16)
+        .lockInGlass(cornerRadius: 20, opacity: 0.07)
+    }
+}
+
+private struct HelpTip: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .fill(LockInTheme.cyan.opacity(0.72))
+                .frame(width: 6, height: 6)
+                .padding(.top, 7)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(LockInTheme.mutedInk)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
