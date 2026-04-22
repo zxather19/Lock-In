@@ -77,9 +77,10 @@ struct MenuBarView: View {
                 RoundedRectangle(cornerRadius: 15, style: .continuous)
                     .fill(LockInTheme.primaryGradient)
                     .frame(width: 42, height: 42)
-                Image(systemName: "rectangle.3.group.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
+                Image(nsImage: NSApplication.shared.applicationIconImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 25, height: 25)
             }
             .shadow(color: LockInTheme.blue.opacity(0.28), radius: 16, y: 8)
 

@@ -65,7 +65,7 @@ final class ModeActivator {
             configuration.activates = false
             NSWorkspace.shared.openApplication(at: appURL, configuration: configuration) { _, error in
                 if let error {
-                    NSLog("Context Switcher launch error for %@: %@", bundleID, error.localizedDescription)
+                    NSLog("Lock-In launch error for %@: %@", bundleID, error.localizedDescription)
                 }
             }
             messages.append("Launched \(bundleID).")

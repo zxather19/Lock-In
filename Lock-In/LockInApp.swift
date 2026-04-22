@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 @main
-struct ContextSwitcherApp: App {
+struct LockInApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
@@ -26,11 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(
-                systemSymbolName: "rectangle.3.group",
-                accessibilityDescription: "Lock-In"
-            )
-            button.image?.isTemplate = true
+            button.image = Self.menuBarIcon()
             button.action = #selector(togglePopover(_:))
             button.target = self
         }
@@ -115,5 +111,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateActivationPolicy(showDockIcon: Bool) {
         NSApp.setActivationPolicy(showDockIcon ? .regular : .accessory)
+    }
+
+    private static func menuBarIcon() -> NSImage {
+        let bundledAppIcon = Bundle.main.url(forResource: "AppIcon", withExtension: "icns")
+            .flatMap { NSImage(contentsOf: $0) }
+        let image = NSImage(named: "MenuBarIcon") ??
+            bundledAppIcon ??
+            NSImage(named: "AppIcon") ??
+            NSApplication.shared.applicationIconImage.copy() as? NSImage ??
+            NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "Lock-In") ??
+            NSImage()
+        image.size = NSSize(width: 18, height: 18)
+        image.isTemplate = false
+        image.accessibilityDescription = "Lock-In"
+        return image
     }
 }

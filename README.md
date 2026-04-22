@@ -10,10 +10,12 @@
 
 Lock-In is a native macOS menu bar app for switching your whole workspace into a saved context. A mode can launch apps, close distractions, open URLs, start a timer, and play an optional cue so you can move from deep work to class to break mode without rebuilding your setup by hand.
 
-## Version 2.0
+## Version 2.1
 
-Version 2.0 is a visual and usability release focused on making every window feel polished, minimal, and consistent.
+Version 2.1 refreshes the menu bar presence with a dedicated Lock-In status icon while keeping the v2 dark glass experience.
 
+- New dedicated `MenuBarIcon` asset for the macOS menu bar
+- Menu bar icon now uses the Lock-In artwork instead of a system symbol
 - New shared dark glass design system across onboarding, menu bar, edit mode, help, and app picker windows
 - Cleaner menu bar popover with compact mode rows, visible Change action, duplicate support, reset, startup toggle, and activation feedback
 - Redesigned mode editor with calmer sections, pastel accents, app cards, and clearer save/cancel actions
@@ -83,7 +85,7 @@ xcodebuild \
   -project Lock-In.xcodeproj \
   -target Lock-In \
   -configuration Release \
-  CONFIGURATION_BUILD_DIR="$PWD/.build/Release-2.0" \
+  CONFIGURATION_BUILD_DIR="$PWD/.build/Release-2.1" \
   CODE_SIGNING_ALLOWED=NO \
   build
 ```
@@ -106,7 +108,7 @@ Lock-In/
 │   └── Info.plist
 ├── Lock-In/
 │   ├── AppCatalog.swift
-│   ├── ContextSwitcherApp.swift
+│   ├── LockInApp.swift
 │   ├── EditModeView.swift
 │   ├── LaunchAtLoginManager.swift
 │   ├── LockInDesign.swift
