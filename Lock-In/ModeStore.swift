@@ -1,42 +1,72 @@
-import Combine
 import Foundation
+import Observation
 
 extension Notification.Name {
     static let reopenOnboardingRequested = Notification.Name("reopenOnboardingRequested")
 }
 
-@MainActor
-final class ModeStore: ObservableObject {
-    @Published var modes: [Mode] = []
-    @Published var activeModeId: UUID?
-    @Published var activationReport: ActivationReport?
-    @Published var notificationStatus: NotificationAuthorizationState = .unknown
-    @Published var hasCompletedOnboarding: Bool
+private struct LockInStoreState: Codable {
+    var activeModeId: UUID?
+    var hasCompletedOnboarding: Bool
+}
 
-    private let modesKey: String
-    private let activeModeKey: String
-    private let onboardingKey: String
-    private let userDefaults: UserDefaults
+@MainActor
+@Observable
+final class ModeStore {
+    static let shared = ModeStore()
+
+    var modes: [Mode] = []
+    var activeModeId: UUID?
+    var activationReport: ActivationReport?
+    var notificationStatus: NotificationAuthorizationState = .unknown
+    var hasCompletedOnboarding = false
+
+    var activator: ModeActivator?
+    var onModesChanged: (([Mode]) -> Void)?
+
+    private let appSupportDirectory: URL
+    private let stateFileName: String
 
     init(
-        userDefaults: UserDefaults = .standard,
-        modesKey: String = "saved_modes",
-        activeModeKey: String = "active_mode_id",
-        onboardingKey: String = "has_completed_onboarding"
+        appSupportDirectory: URL? = nil,
+        stateFileName: String = "store-state.json"
     ) {
-        self.userDefaults = userDefaults
-        self.modesKey = modesKey
-        self.activeModeKey = activeModeKey
-        self.onboardingKey = onboardingKey
-        self.hasCompletedOnboarding = userDefaults.bool(forKey: onboardingKey)
+        self.appSupportDirectory = appSupportDirectory ?? Self.defaultAppSupportDirectory()
+        self.stateFileName = stateFileName
         load()
+    }
+
+    var storageURL: URL {
+        appSupportDirectory.appendingPathComponent("modes.json")
+    }
+
+    private var stateURL: URL {
+        appSupportDirectory.appendingPathComponent(stateFileName)
     }
 
     func save() {
         do {
-            let data = try JSONEncoder().encode(modes)
-            userDefaults.set(data, forKey: modesKey)
-        } catch {}
+            try FileManager.default.createDirectory(at: appSupportDirectory, withIntermediateDirectories: true)
+            let modesData = try JSONEncoder().encode(modes)
+            try modesData.write(to: storageURL, options: .atomic)
+
+            let state = LockInStoreState(
+                activeModeId: activeModeId,
+                hasCompletedOnboarding: hasCompletedOnboarding
+            )
+            let stateData = try JSONEncoder().encode(state)
+            try stateData.write(to: stateURL, options: .atomic)
+        } catch {
+            print("Lock-In save error: \(error.localizedDescription)")
+        }
+    }
+
+    func addMode(_ mode: Mode) {
+        upsert(mode)
+    }
+
+    func updateMode(_ mode: Mode) {
+        upsert(mode)
     }
 
     func upsert(_ mode: Mode) {
@@ -46,16 +76,19 @@ final class ModeStore: ObservableObject {
         } else {
             modes.append(sanitizedMode)
         }
-        save()
+        persistModeMutation()
+    }
+
+    func deleteMode(id: UUID) {
+        modes.removeAll { $0.id == id }
+        if activeModeId == id {
+            activeModeId = nil
+        }
+        persistModeMutation()
     }
 
     func delete(_ mode: Mode) {
-        modes.removeAll { $0.id == mode.id }
-        if activeModeId == mode.id {
-            activeModeId = nil
-            userDefaults.removeObject(forKey: activeModeKey)
-        }
-        save()
+        deleteMode(id: mode.id)
     }
 
     func duplicate(_ mode: Mode) {
@@ -66,20 +99,26 @@ final class ModeStore: ObservableObject {
             appsToQuit: mode.appsToQuit,
             urlsToOpen: mode.urlsToOpen,
             timerMinutes: mode.timerMinutes,
-            soundEnabled: mode.soundEnabled
+            soundEnabled: mode.soundEnabled,
+            shortcut: mode.shortcut,
+            schedule: mode.schedule
         ).sanitizedForSave()
 
         modes.append(copy)
-        save()
+        persistModeMutation()
+    }
+
+    func setModes(_ updatedModes: [Mode]) {
+        modes = updatedModes.map { $0.sanitizedForSave() }
+        if let activeModeId, !modes.contains(where: { $0.id == activeModeId }) {
+            self.activeModeId = nil
+        }
+        persistModeMutation()
     }
 
     func setActiveMode(_ mode: Mode?) {
         activeModeId = mode?.id
-        if let id = mode?.id {
-            userDefaults.set(id.uuidString, forKey: activeModeKey)
-        } else {
-            userDefaults.removeObject(forKey: activeModeKey)
-        }
+        save()
     }
 
     func postActivationReport(_ report: ActivationReport) {
@@ -97,89 +136,68 @@ final class ModeStore: ObservableObject {
     func completeOnboarding(with modes: [Mode]) {
         self.modes = modes.map { $0.sanitizedForSave() }
         hasCompletedOnboarding = true
-        userDefaults.set(true, forKey: onboardingKey)
-        save()
+        persistModeMutation()
     }
 
     func resetForOnboarding() {
-        modes = Self.defaults
+        modes = []
         activeModeId = nil
         activationReport = nil
         hasCompletedOnboarding = false
-
-        userDefaults.removeObject(forKey: activeModeKey)
-        userDefaults.removeObject(forKey: modesKey)
-        userDefaults.set(false, forKey: onboardingKey)
-
-        save()
+        persistModeMutation()
     }
 
-    static let defaults: [Mode] = [
-        Mode(
-            name: "Deep Work",
-            colorHex: "#534AB7",
-            appsToLaunch: [
-                "notion.id",
-                "com.microsoft.VSCode"
-            ],
-            appsToQuit: [
-                "com.atebits.Tweetie2",
-                "com.hnc.Discord"
-            ],
-            urlsToOpen: [
-                "https://docs.google.com"
-            ],
-            timerMinutes: 90,
-            soundEnabled: true
-        ),
-        Mode(
-            name: "Lecture",
-            colorHex: "#0F6E56",
-            appsToLaunch: [
-                "us.zoom.xos"
-            ],
-            appsToQuit: [
-                "com.hnc.Discord",
-                "com.twitter.twitter-mac"
-            ],
-            urlsToOpen: [],
-            timerMinutes: 0,
-            soundEnabled: false
-        ),
-        Mode(
-            name: "Break",
-            colorHex: "#B88780",
-            appsToLaunch: [
-                "com.spotify.client"
-            ],
-            appsToQuit: [],
-            urlsToOpen: [],
-            timerMinutes: 15,
-            soundEnabled: true
-        )
-    ]
-
-    private func load() {
-        if let rawActiveModeId = userDefaults.string(forKey: activeModeKey) {
-            activeModeId = UUID(uuidString: rawActiveModeId)
+    func activate(_ mode: Mode) async {
+        guard let activator else {
+            let report = ActivationReport(
+                level: .failure,
+                title: "Lock-In couldn't activate this mode",
+                details: [],
+                warnings: ["The activation engine has not been configured yet."]
+            )
+            postActivationReport(report)
+            return
         }
 
-        guard let data = userDefaults.data(forKey: modesKey) else {
-            modes = Self.defaults
+        let report = await activator.activate(mode: mode)
+        setActiveMode(mode)
+        postActivationReport(report)
+    }
+
+    static let defaults: [Mode] = ModeTemplate.all
+
+    func load() {
+        do {
+            try FileManager.default.createDirectory(at: appSupportDirectory, withIntermediateDirectories: true)
+        } catch {
+            print("Lock-In storage directory error: \(error.localizedDescription)")
+        }
+
+        if let stateData = try? Data(contentsOf: stateURL),
+           let state = try? JSONDecoder().decode(LockInStoreState.self, from: stateData) {
+            activeModeId = state.activeModeId
+            hasCompletedOnboarding = state.hasCompletedOnboarding
+        } else {
+            activeModeId = nil
+            hasCompletedOnboarding = false
+        }
+
+        guard let data = try? Data(contentsOf: storageURL) else {
+            modes = []
             save()
             return
         }
 
-        do {
-            modes = try JSONDecoder().decode([Mode].self, from: data)
-        } catch {
-            modes = Self.defaults
-            save()
-        }
+        modes = (try? JSONDecoder().decode([Mode].self, from: data)) ?? []
 
         if let activeModeId, !modes.contains(where: { $0.id == activeModeId }) {
-            setActiveMode(nil)
+            self.activeModeId = nil
         }
+    }
+
+    private func persistModeMutation() {
+        save()
+        onModesChanged?(modes)
     }
 
     private func copyName(for name: String) -> String {
@@ -193,5 +211,10 @@ final class ModeStore: ObservableObject {
             index += 1
         }
         return "\(baseName) \(index)"
+    }
+
+    private static func defaultAppSupportDirectory() -> URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("LockIn", isDirectory: true)
     }
 }
