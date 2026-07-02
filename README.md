@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Focus Modes in steroids</strong>
+  <strong>Focus Modes on steroids</strong>
 </p>
 
 Lock-In is a native macOS menu bar app that saves workspace modes for different contexts. A mode can launch apps, close distractions, open URLs, start a timer, respond to a global shortcut, and optionally run on a schedule.
